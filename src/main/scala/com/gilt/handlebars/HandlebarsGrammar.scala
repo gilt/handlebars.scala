@@ -78,7 +78,9 @@ class HandlebarsGrammar(delimiters: (String, String)) extends JavaTokenParsers {
 
   def lit = stringLit | doubleLit | longLit
 
-  def keyValue = identifier ~ "=" ~ lit ^^ { case a ~ b ~ c => KeyValue(a, c) }
+  def pathOrLiteral = lit | path
+
+  def keyValue = identifier ~ "=" ~ pathOrLiteral ^^ { case a ~ b ~ c => KeyValue(a, c) }
 
   def argument =  keyValue | path | lit
 

@@ -297,7 +297,7 @@ class HandlebarsVisitorSpec extends Specification {
     }
 
     val testHelpers: Map[String, Helper[Any]] = Map("helperName" -> ((context, options, parentContext) => {
-      context.head + " " + options.hash("foo").toString + " " + options.hash("level").asInstanceOf[Long] * 2
+      context.head + " " + options.hash("foo").toString + " " + options.hash("level").asInstanceOf[Number].longValue * 2
     }));
 
     "visit a program and resolve a helper mustache with hash: {{helper argument foo=\"bar\"}}" in {
@@ -306,6 +306,15 @@ class HandlebarsVisitorSpec extends Specification {
         val addressee = "world"
       }, testHelpers)
       visitor.visit(program) must beEqualTo("world bar 42.")
+    }
+
+    "visit a program and resolve a helper mustache with hash with variable value: {{helper argument foo=varName}}" in {
+      val program = Handlebars.parse("""{{helperName addressee foo="bar" level=userLevel}}.""")
+      val visitor = HandlebarsVisitor(new {
+        val addressee = "world"
+        val userLevel = 18
+      }, testHelpers)
+      visitor.visit(program) must beEqualTo("world bar 36.")
     }
 
     "visit a program and resolve a helper mustache with a string literal: {{helper \"argument\"}}" in {
