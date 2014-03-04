@@ -82,7 +82,7 @@ class HandlebarsVisitor[T](
         if (logger.isDebugEnabled) {
           logger.debug("Found: '%s' in helpers.".format(list.head.value))
         }
-        HelperResult(fn(argsWithoutHash.map(_.context), HandlebarsVisitor[T](this.context.context, this.additionalHelpers, realHash), Some(context.context)), Some(context))
+        HelperResult(fn(argsWithoutHash.map(_.context), new HandlebarsVisitor[T](context, this.additionalHelpers, realHash), Some(context.context)), Some(context))
       }
     } getOrElse {
       logger.warn("Unable to find value '%s' in context: '%s' or available helpers.".format(list.map(_.value).mkString("/"), context.context))

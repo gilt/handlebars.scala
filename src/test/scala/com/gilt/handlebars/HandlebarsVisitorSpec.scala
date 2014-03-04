@@ -51,6 +51,31 @@ class HandlebarsVisitorSpec extends Specification {
       visitor.visit(program) must beEqualTo("Goodbye, world.")
     }
 
+    "visit a program with a ../ path to escape a helper" in {
+      val program = Handlebars.parse("{{#greeting}}{{#if test}}{{../../farewell}}{{/if}}{{/greeting}}, world.")
+      val visitor = HandlebarsVisitor(new {
+        val greeting = new {
+          val test = true;
+        }
+        val farewell = "Goodbye"
+      })
+      visitor.visit(program) must beEqualTo("Goodbye, world.")
+    }
+
+    "visit a program with nested context" in {
+      val program = Handlebars.parse("{{#greeting}}{{#inner}}{{../../../farewell}}{{/inner}}{{/greeting}}, world.")
+      val visitor = HandlebarsVisitor(new {
+        val greeting = new {
+          val inner = Some(new {
+            val x=23; val y=18
+          })
+        }
+        val farewell = "Goodbye"
+      })
+      visitor.visit(program) must beEqualTo("Goodbye, world.")
+    }
+
+
     "visit a program with the mustache containg a path: {{foo/bar/../baz}}" in {
       val program = Handlebars.parse("{{greeting/hi/../yo}}, world.")
       val visitor = HandlebarsVisitor(new {
