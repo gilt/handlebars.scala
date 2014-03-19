@@ -542,6 +542,44 @@ class HandlebarsVisitorSpec extends Specification {
       })
       visitor.visit(program) must beEqualTo("No people")
     }
+
+    "visit a program with helper and complex context" in {
+      case class Navigation(credits: Double, accountNav: AccountNav)
+      case class AccountNav(loyaltyLevel: String, loyaltyPoints: Long)
+      val helpers: Map[String, Handlebars.Helper[Any]] = Map(
+        "passthrough" -> ((context, option, parent) =>
+          parent.map(option.fn(_))
+        )
+      )
+
+      val template =
+        """Account Credits: {{credits}}
+          |{{#accountNav}}
+          |Nav:
+          |{{#passthrough}}
+          |- loyaltyLevel: {{loyaltyLevel}}
+          |- loyaltyPoints: {{loyaltyPoints}}
+          |{{/passthrough}}
+          |{{/accountNav}}""".stripMargin
+
+      val program = Handlebars.parse(template)
+
+      val ctx = Navigation(123.34d, AccountNav("Noir", 23312l))
+      val visitor = HandlebarsVisitor(ctx, helpers)
+      val expected =
+        """Account Credits: 123.34
+          |Nav:
+          |- loyaltyLevel: Noir
+          |- loyaltyPoints: 23312
+          |
+          |""".stripMargin
+      val actual = visitor.visit(program)
+
+      println("Expected\n\n:%s".format(expected))
+      println("Actual\n\n:%s".format(actual))
+
+      actual must beEqualTo(expected)
+    }
   }
 
   "A Context" should {

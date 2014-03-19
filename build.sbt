@@ -1,3 +1,5 @@
+//gilt.GiltProject.jarSettings
+
 name := "handlebars"
 
 organization := "com.gilt"
@@ -30,7 +32,7 @@ publishTo <<= version { (v: String) =>
     Some("releases"  at nexus + "/service/local/staging/deploy/maven2")
 }
 
-// For publishing / testing locally
+//For publishing / testing locally
 //publishTo := Some(Resolver.file("m2",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 
 publishArtifact in Test := false

@@ -138,7 +138,20 @@ class HandlebarsVisitor[T](
   private def renderHelperBlock(hr: HelperResult[Any], program: Program): String = {
     // follow Handlebrs.js behavior for "falsy" values
     if (hr.truthValue) {
-      fn(hr.context)(program)
+      hr.context match {
+        /*
+         * Check to see if the helper returned a function. This means that they probably called
+         *
+         * 'options.fn(_)'
+         *
+         * fn returns a function (Program) => String so the context is invalid, it should be the parent context.
+         *
+         * This is just a patch until an upgrade to 1.0.0 of handlebars.scala can heppen
+         */
+        case f:Option[Function[_,_]] if hr.parent.isDefined =>
+          fn(hr.parent.get.context)(program)
+        case _ => fn(hr.context)(program)
+      }
     } else {
       // could implement Handlebars.js' else-blocks in here
       // with a change to Program and the Grammar
@@ -209,7 +222,9 @@ class HandlebarsVisitor[T](
       case fun:Function1[_,_] => fun.asInstanceOf[Function1[Program,String]].apply(program).toString
       case Some(v) => createVisitor(new ChildContext(v, Some(block))).visit(program)
       case None => ""
-      case _ => createVisitor(block).visit(program)
+      case _ => {
+        createVisitor(block).visit(program)
+      }
     }
   }
 
