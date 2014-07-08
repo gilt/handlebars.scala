@@ -114,7 +114,7 @@ class HandlebarsVisitor[T](
        * it is useful to handle them as separate cases.
        */
       resolvePath(path.value, convertArgsToContexts(parameters)) match {
-        case hr: HelperResult[_] => renderHelperBlock(hr, program)
+        case hr: HelperResult[_] => renderHelperBlock(hr, program, inverted)
         case c => {
           if (logger.isDebugEnabled) {
             logger.debug("Inverting the block for: %s".format(path))
@@ -135,9 +135,9 @@ class HandlebarsVisitor[T](
    * @param hr the result of evaluating the helper function.
    * @param program the block to render.
    */
-  private def renderHelperBlock(hr: HelperResult[Any], program: Program): String = {
+  private def renderHelperBlock(hr: HelperResult[Any], program: Program, inverted: Boolean): String = {
     // follow Handlebrs.js behavior for "falsy" values
-    if (hr.truthValue) {
+    if (hr.truthValue && !inverted) {
       hr.context match {
         /*
          * Check to see if the helper returned a function. This means that they probably called
@@ -148,15 +148,27 @@ class HandlebarsVisitor[T](
          *
          * This is just a patch until an upgrade to 1.0.0 of handlebars.scala can heppen
          */
-        case f:Option[Function[_,_]] if hr.parent.isDefined =>
+        case f: Option[Function[_, _]] if hr.parent.isDefined =>
           fn(hr.parent.get.context)(program)
-        case _ => fn(hr.context)(program)
+        case _ =>
+          fn(hr.context)(program)
       }
     } else {
       // could implement Handlebars.js' else-blocks in here
       // with a change to Program and the Grammar
       // ""
-      program.inverse.map(fn(context.context)(_)).getOrElse("")
+
+      /*
+       * Handle inverted handlebars {{^helper}}body{{/helper}}
+       *  Only evaluates the body if the helper truthValue is false
+       */
+      if (inverted && !hr.truthValue) {
+          fn(context.context)(program)
+      } else {
+
+      // Otherwise handle the 'inverse block' aka the {{else}} statement
+        program.inverse.map(fn(context.context)(_)).getOrElse("")
+      }
     }
   }
 

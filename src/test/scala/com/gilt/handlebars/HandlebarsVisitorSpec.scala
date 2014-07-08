@@ -543,6 +543,24 @@ class HandlebarsVisitorSpec extends Specification {
       visitor.visit(program) must beEqualTo("No people")
     }
 
+    "visit a program and render an inverse block using a helper that returned falsy" in {
+      val program = Handlebars.parse("{{^trueFalseHelper}}Inverse Block!!{{/trueFalseHelper}}")
+      val helpers: Map[String, Handlebars.Helper[Any]] = Map(
+        "trueFalseHelper" -> ((context, options, parent) => false
+      ))
+      val visitor = HandlebarsVisitor(new {}, helpers)
+      visitor.visit(program) must beEqualTo("Inverse Block!!")
+    }
+
+    "visit a program and render an inverse block using a helper that returned truthy" in {
+      val program = Handlebars.parse("{{^trueFalseHelper}}Inverse Block!!{{/trueFalseHelper}}")
+      val helpers: Map[String, Handlebars.Helper[Any]] = Map(
+        "trueFalseHelper" -> ((context, options, parent) => parent.map(options.fn)
+          ))
+      val visitor = HandlebarsVisitor(new {}, helpers)
+      visitor.visit(program) must beEqualTo("")
+    }
+
     "visit a program with helper and complex context" in {
       case class Navigation(credits: Double, accountNav: AccountNav)
       case class AccountNav(loyaltyLevel: String, loyaltyPoints: Long)
