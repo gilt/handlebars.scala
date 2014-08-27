@@ -20,7 +20,7 @@ case class DoubleLiteral(value: Double) extends Argument
 case class LongLiteral(value: Long) extends Argument
 case class Mustache(value: Path,
     parameters: List[Argument] = Nil,
-    escaped: Boolean = true) extends Node
+    escaped: Boolean) extends Node
 case class Section(name: Mustache, value: Program, inverted: Boolean = false) extends Node
 case class Program(value: List[Node], inverse: Option[Program] = None) extends Node
 case class KeyValue(ident: Identifier, lit: Argument) extends Argument
@@ -58,15 +58,13 @@ class HandlebarsGrammar(delimiters: (String, String)) extends JavaTokenParsers {
 
   def comment = mustachify("!" ~> content ^^ {t => Comment(t.value)})
 
-  def unescapedMustache =
-      mustachify("{" ~> pad(path) <~ "}" ^^ {Mustache(_, escaped=false)}) |
-      mustachify("&" ~> pad(path) ^^ {Mustache(_, escaped=false)})
+  def unescapedMustache = mustachify("{" ~> pad(mustachable(false)) <~ "}") | mustachify("&" ~> pad(mustachable(false)))
 
-  def mustache = not(elseStache) ~> mustachify(pad(mustachable))
+  def mustache = not(elseStache) ~> mustachify(pad(mustachable(true)))
 
   def elseStache = mustachify(pad("else" | "^") ^^ { _ => new Inversion()})
 
-  def mustachable = helper ^^ { case id ~ list => Mustache(id, list) } | path ^^ {Mustache(_)}
+  def mustachable(escaped: Boolean) = helper ^^ { case id ~ list => Mustache(id, list, escaped) } | path ^^ {Mustache(_, escaped = escaped)}
 
   def helper = path ~ rep1(rep1(whiteSpace) ~> argument)
 
@@ -88,7 +86,7 @@ class HandlebarsGrammar(delimiters: (String, String)) extends JavaTokenParsers {
 
   def identifier = (".." | ident) ^^ {Identifier(_)}
 
-  def blockify(prefix: String) = mustachify(prefix ~> pad(mustachable)) >> {
+  def blockify(prefix: String) = mustachify(prefix ~> pad(mustachable(false))) >> {
     case (stache: Mustache) => {
       val path: Path = stache.value
       pad(elseBlock | root) <~ openDelimiter <~ "/"<~ pad(path.value.map(_.value).mkString("/")) <~ closeDelimiter ^^ { body =>
