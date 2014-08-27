@@ -29,6 +29,14 @@ class HandlebarsGrammarSpec extends Specification with ParserMatchers {
       parsers.root("{{& foo}}") must haveSuccessResult(""".*foo.*,.*false.*""")
     }
 
+    "parse an unescaped mustache with parameters" in {
+      parsers.root("{{{foo bar}}}") must haveSuccessResult("""Mustache\(.*foo.*,.*bar.*\)""")
+    }
+
+    "parse an unescaped mustache with parameters and the ampersand" in {
+      parsers.root("{{&foo bar}}") must haveSuccessResult("""Mustache\(.*foo.*,.*bar.*\)""")
+    }
+
     "parse a mustache with a path" in {
       parsers.root("{{foo/bar}}") must haveSuccessResult(""".*foo.*,.*bar.*""")
     }
