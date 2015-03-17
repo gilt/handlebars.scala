@@ -39,12 +39,16 @@ scalacOptions += "-unchecked"
 
 publishMavenStyle := true
 
+isSnapshot := true
+
+credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.gilt.com", "<opengrok>", "<opengrok>")
+
 publishTo <<= version { (v: String) =>
   val nexus = "https://nexus.gilt.com/"
   if (v.trim.endsWith("SNAPSHOT"))
-    Some("gilt.internal.snapshots" at nexus + "content/repositories/internal-snapshots")
+    Some("gilt.internal.snapshots" at nexus + "nexus/content/repositories/internal-snapshots")
   else
-    Some("gilt.internal.releases"  at nexus + "content/repositories/internal-releases")
+    Some("gilt.internal.releases"  at nexus + "nexus/content/repositories/internal-releases")
 }
 
 //For publishing / testing locally
